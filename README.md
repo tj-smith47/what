@@ -25,15 +25,20 @@ $ kubectl apply -f x.yaml 2>&1 | what does this error mean
 |---|---|---|
 | `-m, --model` | `WHAT_MODEL` | `claude-sonnet-5` |
 | `-e, --effort` | `WHAT_EFFORT` | `auto` — else `low`\|`medium`\|`high`\|`xhigh`\|`max` |
-| `-t, --tools` | `WHAT_TOOLS` | none — `-t WebSearch` to let it look things up |
+| `-t, --tools` | `WHAT_TOOLS` | `Read,Glob,Grep` — read-only, local, no network |
 
 `auto` means the flag is not passed, so the model's own default effort applies
 (`claude --effort auto` is rejected; omitting it is how you get auto).
 
-`--tools` takes built-in tool names, comma- or space-separated, and repeats:
-`-t WebSearch,WebFetch`, `-t "Bash Read"`, `-t default` for the whole set.
-Useful ones: `WebSearch WebFetch Bash Read Glob Grep`. MCP servers and skills
-are not reachable — `--safe-mode` turns them off.
+By default it can look at your files (`Read` opens one, `Glob` finds them by
+path pattern, `Grep` searches their contents) but cannot change them or reach
+the network, so `what does the -t flag default to in the what script here`
+works in a repo. Add `Bash` to let it run commands, `WebSearch`/`WebFetch` to
+let it look things up online, `-t none` for a pure offline answer, `-t default`
+for everything. Names are comma- or space-separated.
+
+`what --list-tools` prints the names your claude build accepts. MCP servers,
+skills and plugins are deliberately unreachable — `--safe-mode` turns them off.
 
 ```bash
 what -m claude-opus-5 is the cheapest way to dedupe a 10GB file

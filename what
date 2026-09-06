@@ -4,13 +4,19 @@ set -euo pipefail
 
 model=${WHAT_MODEL:-claude-sonnet-5}
 effort=${WHAT_EFFORT:-auto}
-tools=${WHAT_TOOLS:-}
+tools=${WHAT_TOOLS:-Read,Glob,Grep}
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -m|--model)  model=$2; shift 2 ;;
     -e|--effort) effort=$2; shift 2 ;;
     -t|--tools)  tools=$2; shift 2 ;;
+    --list-tools)
+      # No CLI lists them, but a session announces its own set in its init event.
+      claude -p --safe-mode --tools default --output-format stream-json --verbose \
+        --model "$model" -- hi </dev/null | head -1 |
+        python3 -c 'import json,sys; print("\n".join(sorted(json.load(sys.stdin)["tools"] + ["Glob", "Grep"])))'
+      exit 0 ;;
     -h|--help)
       cat <<'USAGE'
 what — ask a quick technical question, get one line back.
@@ -21,10 +27,12 @@ what — ask a quick technical question, get one line back.
 
   -m, --model   model (env WHAT_MODEL, default claude-sonnet-5)
   -e, --effort  auto|low|medium|high|xhigh|max (env WHAT_EFFORT, default auto)
-  -t, --tools   tools it may use (env WHAT_TOOLS, default none, so answers are
-                fast and offline). Any built-in tool name, comma- or
-                space-separated: WebSearch WebFetch Bash Read Glob Grep ...
-                "default" gives it the whole built-in set.
+  -t, --tools   tools it may use (env WHAT_TOOLS, default Read,Glob,Grep — it
+                can look at your files but not change them or reach the
+                network). Comma- or space-separated built-in tool names;
+                "none" for none, "default" for the whole built-in set.
+                Worth adding: Bash, WebSearch, WebFetch.
+      --list-tools   print the tool names this claude build accepts
 USAGE
       exit 0 ;;
     --) shift; break ;;
@@ -37,6 +45,8 @@ case $effort in
   low|medium|high|xhigh|max) ;;
   *) echo "what: bad effort '$effort' (auto|low|medium|high|xhigh|max)" >&2; exit 2 ;;
 esac
+
+[[ $tools != none ]] || tools=""
 
 q="$*"
 # Only a pipe or a file redirect is question context; an inherited stdin (cron,
@@ -58,7 +68,8 @@ exec claude -p \
   --safe-mode \
   --no-session-persistence \
   --tools "$tools" \
+  --permission-prompts none \
   --model "$model" \
   ${effort:+--effort "$effort"} \
-  --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation. Never emit tool-call syntax or XML function blocks: answer from your own knowledge unless you actually have a tool available.' \
+  --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no backticks, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation. Never emit tool-call syntax or XML function blocks: answer from your own knowledge unless you actually have a tool available. If the question is about files in the current directory, look before answering; otherwise do not touch the filesystem.' \
   -- "$q" </dev/null
