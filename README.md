@@ -45,7 +45,7 @@ cd what
 few more names and the rest of the question words work the same way:
 
 ```bash
-what --add-alias how,why,when,where,who,which
+what --add-alias how,why,when,where
 ```
 
 They land next to `what` itself, pointing at the same script:
@@ -62,17 +62,20 @@ Rust 0.1 was released January 20, 2012; Rust 1.0 came May 15, 2015.
 
 $ where does systemd keep unit files
 /etc/systemd/system (local, wins), /run/systemd/system (runtime), /usr/lib/systemd/system (packages).
+```
 
-$ who owns the files in /var/lib/docker
-Typically root, since the Docker daemon runs as root by default.
+A name that is already a command gets skipped, because `who` and `which` are
+real tools and shadowing them breaks scripts:
 
-$ which sort flag makes it numeric
-sort -n
+```console
+$ what --add-alias who,which
+what: 'who' is already /usr/bin/who, skipping (--force to shadow it)
+what: 'which' is already /usr/bin/which, skipping (--force to shadow it)
 ```
 
 Every alias is a symlink, so `rm ~/.local/bin/how` removes one and a `git pull`
-updates them all. Question words are the useful set, but any name works:
-something like `explain` falls back to reading as a `what` question.
+updates them all. Question words are the useful set, but any free name works:
+something like `explain` reads as a `what` question.
 
 ## Usage
 
