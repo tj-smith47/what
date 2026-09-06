@@ -30,15 +30,20 @@ USAGE
 done
 
 q="$*"
+# Only a pipe or a file redirect is question context; an inherited stdin (cron,
+# an agent harness, /dev/null) must not make `cat` block forever.
+stdin=""
+if [[ ! -t 0 && ( -p /dev/stdin || -f /dev/stdin ) ]]; then stdin=$(cat); fi
+
+if [[ -z ${q//[[:space:]]/} ]]; then
+  [[ -n ${stdin//[[:space:]]/} ]] || { echo "what: no question given (try: what --help)" >&2; exit 2; }
+  q="is this? explain concisely"
+fi
+
 # The command name is the first word of the sentence: `what is X` -> "what is X".
 [[ $q =~ ^[[:space:]]*(what|how|why|when|where|who|which|whose|whom)([[:space:]]|$) ]] || q="what $q"
 
-# Piped stdin becomes context for the question (`cmd 2>&1 | what does this mean`).
-if [[ ! -t 0 ]]; then
-  q=$(printf '%s\n\nContext (piped to stdin):\n%s' "$q" "$(cat)")
-fi
-
-[[ -n ${q// /} ]] || { echo "what: no question given (try: what --help)" >&2; exit 2; }
+[[ -z $stdin ]] || q=$(printf '%s\n\nContext (piped to stdin):\n%s' "$q" "$stdin")
 
 exec claude -p \
   --safe-mode \
@@ -47,4 +52,4 @@ exec claude -p \
   --model "$model" \
   ${effort:+--effort "$effort"} \
   --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation.' \
-  -- "$q"
+  -- "$q" </dev/null
