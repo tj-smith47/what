@@ -11,6 +11,13 @@ while [[ $# -gt 0 ]]; do
     -m|--model)  model=$2; shift 2 ;;
     -e|--effort) effort=$2; shift 2 ;;
     -t|--tools)  tools=$2; shift 2 ;;
+    --add-alias)
+      src=$(readlink -f "$0"); bin=$(cd "$(dirname "$0")" && pwd)
+      for name in $(printf '%s' "$2" | tr ',' ' '); do
+        [[ $name != */* ]] || { echo "what: bad alias name '$name'" >&2; exit 2; }
+        ln -sfn "$src" "$bin/$name" && echo "aliased: $bin/$name -> $src"
+      done
+      exit 0 ;;
     --list-tools)
       # No CLI lists them, but a session announces its own set in its init event.
       claude -p --safe-mode --tools default --output-format stream-json --verbose \
@@ -24,6 +31,9 @@ what: ask a quick technical question, get one line back.
   what is the sort flag for selecting the field to sort by
   what does chmod 4755 mean
   echo "$err" | what does this mean
+
+  --add-alias how,where   install `how` and `where` alongside this command,
+                          so `how do i ...` and `where does ... live` work too
 
   -m, --model   model (env WHAT_MODEL, default claude-sonnet-5)
   -e, --effort  auto|low|medium|high|xhigh|max (env WHAT_EFFORT, default auto)
@@ -59,8 +69,12 @@ if [[ -z ${q//[[:space:]]/} ]]; then
   q="is this? explain concisely"
 fi
 
-# The command name is the first word of the sentence: `what is X` -> "what is X".
-[[ $q =~ ^[[:space:]]*(what|how|why|when|where|who|which|whose|whom)([[:space:]]|$) ]] || q="what $q"
+# The command name is the first word of the sentence: `what is X` -> "what is X",
+# and an alias speaks for itself: `how do I X` -> "how do I X".
+words='what|how|why|when|where|who|which|whose|whom'
+self=${0##*/}
+[[ $self =~ ^($words)$ ]] || self=what
+[[ $q =~ ^[[:space:]]*($words)([[:space:]]|$) ]] || q="$self $q"
 
 [[ -z $stdin ]] || q=$(printf '%s\n\nContext (piped to stdin):\n%s' "$q" "$stdin")
 

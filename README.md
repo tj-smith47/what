@@ -25,9 +25,8 @@ ss -tulnp
 ## Why
 
 Because opening a chat window to remember a flag costs more than the flag is
-worth. This is a 75 line shell script around `claude -p`, tuned so the answer
-fits on one line and arrives in about two seconds. It stays out of your way:
-no session history, no config file, nothing to set up.
+worth. This is a shell script around `claude -p`, tuned so the answer fits on
+one line and arrives in about two seconds.
 
 ## Install
 
@@ -39,6 +38,41 @@ cd what
 ./install.sh                 # symlinks into ~/.local/bin, so git pull updates it
 ./install.sh /usr/local/bin  # or pick your own directory
 ```
+
+## Aliases
+
+`what` reads the command name as the first word of your question, so install a
+few more names and the rest of the question words work the same way:
+
+```bash
+what --add-alias how,why,when,where,who,which
+```
+
+They land next to `what` itself, pointing at the same script:
+
+```console
+$ how do i list open ports on linux
+ss -tulpn
+
+$ why does git say detached HEAD
+You checked out a commit, tag, or remote branch directly instead of a local branch.
+
+$ when was the first release of rust
+Rust 0.1 was released January 20, 2012; Rust 1.0 came May 15, 2015.
+
+$ where does systemd keep unit files
+/etc/systemd/system (local, wins), /run/systemd/system (runtime), /usr/lib/systemd/system (packages).
+
+$ who owns the files in /var/lib/docker
+Typically root, since the Docker daemon runs as root by default.
+
+$ which sort flag makes it numeric
+sort -n
+```
+
+Every alias is a symlink, so `rm ~/.local/bin/how` removes one and a `git pull`
+updates them all. Question words are the useful set, but any name works:
+something like `explain` falls back to reading as a `what` question.
 
 ## Usage
 
