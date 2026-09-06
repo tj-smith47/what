@@ -19,7 +19,7 @@ while [[ $# -gt 0 ]]; do
       exit 0 ;;
     -h|--help)
       cat <<'USAGE'
-what — ask a quick technical question, get one line back.
+what: ask a quick technical question, get one line back.
 
   what is the sort flag for selecting the field to sort by
   what does chmod 4755 mean
@@ -27,7 +27,7 @@ what — ask a quick technical question, get one line back.
 
   -m, --model   model (env WHAT_MODEL, default claude-sonnet-5)
   -e, --effort  auto|low|medium|high|xhigh|max (env WHAT_EFFORT, default auto)
-  -t, --tools   tools it may use (env WHAT_TOOLS, default Read,Glob,Grep — it
+  -t, --tools   tools it may use (env WHAT_TOOLS, default Read,Glob,Grep, it
                 can look at your files but not change them or reach the
                 network). Comma- or space-separated built-in tool names;
                 "none" for none, "default" for the whole built-in set.
