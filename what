@@ -3,7 +3,7 @@
 set -euo pipefail
 
 model=${WHAT_MODEL:-claude-sonnet-5}
-effort=${WHAT_EFFORT:-}
+effort=${WHAT_EFFORT:-auto}
 tools=${WHAT_TOOLS:-}
 
 while [[ $# -gt 0 ]]; do
@@ -20,14 +20,23 @@ what — ask a quick technical question, get one line back.
   echo "$err" | what does this mean
 
   -m, --model   model (env WHAT_MODEL, default claude-sonnet-5)
-  -e, --effort  low|medium|high|xhigh|max (env WHAT_EFFORT, default: model's own)
-  -t, --tools   built-in tools to allow, e.g. WebSearch (env WHAT_TOOLS, default: none)
+  -e, --effort  auto|low|medium|high|xhigh|max (env WHAT_EFFORT, default auto)
+  -t, --tools   tools it may use (env WHAT_TOOLS, default none, so answers are
+                fast and offline). Any built-in tool name, comma- or
+                space-separated: WebSearch WebFetch Bash Read Glob Grep ...
+                "default" gives it the whole built-in set.
 USAGE
       exit 0 ;;
     --) shift; break ;;
     *) break ;;
   esac
 done
+
+case $effort in
+  auto|"") effort="" ;;                 # claude has no "auto" level; omitting the flag IS auto
+  low|medium|high|xhigh|max) ;;
+  *) echo "what: bad effort '$effort' (auto|low|medium|high|xhigh|max)" >&2; exit 2 ;;
+esac
 
 q="$*"
 # Only a pipe or a file redirect is question context; an inherited stdin (cron,
@@ -51,5 +60,5 @@ exec claude -p \
   --tools "$tools" \
   --model "$model" \
   ${effort:+--effort "$effort"} \
-  --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation.' \
+  --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation. Never emit tool-call syntax or XML function blocks: answer from your own knowledge unless you actually have a tool available.' \
   -- "$q" </dev/null

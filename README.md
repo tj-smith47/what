@@ -24,8 +24,16 @@ $ kubectl apply -f x.yaml 2>&1 | what does this error mean
 | Flag | Env | Default |
 |---|---|---|
 | `-m, --model` | `WHAT_MODEL` | `claude-sonnet-5` |
-| `-e, --effort` | `WHAT_EFFORT` | model's own (`low`\|`medium`\|`high`\|`xhigh`\|`max`) |
+| `-e, --effort` | `WHAT_EFFORT` | `auto` — else `low`\|`medium`\|`high`\|`xhigh`\|`max` |
 | `-t, --tools` | `WHAT_TOOLS` | none — `-t WebSearch` to let it look things up |
+
+`auto` means the flag is not passed, so the model's own default effort applies
+(`claude --effort auto` is rejected; omitting it is how you get auto).
+
+`--tools` takes built-in tool names, comma- or space-separated, and repeats:
+`-t WebSearch,WebFetch`, `-t "Bash Read"`, `-t default` for the whole set.
+Useful ones: `WebSearch WebFetch Bash Read Glob Grep`. MCP servers and skills
+are not reachable — `--safe-mode` turns them off.
 
 ```bash
 what -m claude-opus-5 is the cheapest way to dedupe a 10GB file
