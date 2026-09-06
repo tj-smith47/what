@@ -14,11 +14,12 @@ You typo'd the branch name. Git found no branch or file called "mian". You proba
 ```
 
 The command name is the first word of the question, so `what is X` reads as a
-sentence. Questions starting with `how`, `why`, `where`, `who` or `which` go
-through unchanged (see [Aliases](#aliases) to install those as commands):
+sentence. The other question words work the same way once installed as
+commands (see [Aliases](#aliases)):
 
 ```console
-$ what how do i list open ports on linux
+$ what --add-alias how
+$ how do i list open ports on linux
 ss -tulnp
 ```
 
