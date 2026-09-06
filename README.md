@@ -14,19 +14,16 @@ You typo'd the branch name. Git found no branch or file called "mian". You proba
 ```
 
 The command name is the first word of the question, so `what is X` reads as a
-sentence. Questions that start with `how`, `why`, `where`, `who` or `which` are
-passed through as written:
+sentence. Questions starting with `how`, `why`, `where`, `who` or `which` go
+through unchanged:
 
 ```console
 $ what how do i list open ports on linux
 ss -tulnp
 ```
 
-## Why
-
-Because opening a chat window to remember a flag costs more than the flag is
-worth. This is a shell script around `claude -p`, tuned so the answer fits on
-one line and arrives in about two seconds.
+It is a shell script around `claude -p` with a system prompt that asks for a
+one line answer. Most answers come back in about two seconds.
 
 ## Install
 
@@ -41,14 +38,14 @@ cd what
 
 ## Aliases
 
-`what` reads the command name as the first word of your question, so install a
-few more names and the rest of the question words work the same way:
+Since the command name is the first word of the question, other question words
+can be installed as commands too:
 
 ```bash
 what --add-alias how,why,when,where
 ```
 
-They land next to `what` itself, pointing at the same script:
+Each one is a symlink next to `what`, pointing at the same script:
 
 ```console
 $ how do i list open ports on linux
@@ -64,8 +61,8 @@ $ where does systemd keep unit files
 /etc/systemd/system (local, wins), /run/systemd/system (runtime), /usr/lib/systemd/system (packages).
 ```
 
-A name that is already a command gets skipped, because `who` and `which` are
-real tools and shadowing them breaks scripts:
+A name that is already a command gets skipped. `who` and `which` are real
+programs, and a symlink in front of them would break scripts that call them:
 
 ```console
 $ what --add-alias who,which
@@ -73,9 +70,9 @@ what: 'who' is already /usr/bin/who, skipping (--force to shadow it)
 what: 'which' is already /usr/bin/which, skipping (--force to shadow it)
 ```
 
-Every alias is a symlink, so `rm ~/.local/bin/how` removes one and a `git pull`
-updates them all. Question words are the useful set, but any free name works:
-something like `explain` reads as a `what` question.
+To remove an alias, delete the symlink. `git pull` updates all of them at once.
+Names outside the question words work as well; `explain` gets read as a `what`
+question.
 
 ## Usage
 
@@ -89,7 +86,6 @@ cmd 2>&1 | what does this mean
 | `-m, --model` | `WHAT_MODEL` | `claude-sonnet-5` |
 | `-e, --effort` | `WHAT_EFFORT` | `auto`, else `low` \| `medium` \| `high` \| `xhigh` \| `max` |
 | `-t, --tools` | `WHAT_TOOLS` | `Read,Glob,Grep` |
-| `--list-tools` | | print the tool names your Claude Code build accepts |
 
 ```bash
 what -m claude-opus-5 is the cheapest way to dedupe a 10GB file
@@ -99,8 +95,8 @@ what -t WebSearch is the latest stable kubernetes version
 
 ### Piped input
 
-Anything piped in becomes context for the question, which makes it a decent
-error explainer. With no question at all, it just explains what it was given.
+Whatever comes in on stdin is sent along with the question. Without a question
+it describes what it was given.
 
 ```bash
 cargo build 2>&1 | what does this error mean
@@ -110,8 +106,8 @@ cat weird_migration.sql | what
 
 ### Tools
 
-By default it can look at your files but cannot change them or reach the
-network, so questions about the repo you are standing in work:
+By default it can read files in the current directory. It cannot write them or
+use the network. So questions about the repo you are in work:
 
 ```console
 $ what does the -t flag default to in the what script here
@@ -126,11 +122,11 @@ Defaults to Read,Glob,Grep (overridable via env var WHAT_TOOLS).
 | `Bash` | runs commands | no, it can change things |
 | `WebSearch`, `WebFetch` | looks things up online | no, slower |
 
-Widen with `-t Bash,WebSearch`, go fully offline with `-t none`, or hand it
-everything with `-t default`. Names are comma or space separated, and
-`what --list-tools` prints the full set your build accepts.
+Pass `-t Bash,WebSearch` to add tools. `-t none` turns them all off and
+`-t default` turns on the whole built-in set. Names can be separated with
+commas or spaces, and `what --list-tools` prints every name your build accepts.
 
-Questions that need no files skip the detour, so the common case stays fast:
+Questions that do not involve files take no extra time:
 
 ```console
 $ time what does chmod 4755 mean
@@ -153,12 +149,12 @@ claude -p --safe-mode --no-session-persistence --tools Read,Glob,Grep
 sort -k N (e.g. sort -k2)
 ```
 
-`--safe-mode` is doing the heavy lifting. It means your `CLAUDE.md`, hooks,
-skills, plugins, MCP servers and custom settings are never loaded, so a
-question here behaves the same on every machine and never inherits a project's
-context. `--permission-prompts none` guarantees the script cannot sit waiting
-for an approval that nobody is there to give, and session persistence is off so
-your history does not fill with one line questions.
+`--safe-mode` is why the answers are consistent. It skips your `CLAUDE.md`,
+hooks, skills, plugins, MCP servers and settings, so a question gets the same
+treatment on every machine and picks up nothing from whatever project you
+happen to be in. `--permission-prompts none` means the script cannot stall on a
+permission prompt in a non-interactive run. Session persistence is off, so
+these do not show up in `claude --resume`.
 
 ## License
 
