@@ -15,7 +15,7 @@ You typo'd the branch name. Git found no branch or file called "mian". You proba
 
 The command name is the first word of the question, so `what is X` reads as a
 sentence. Questions starting with `how`, `why`, `where`, `who` or `which` go
-through unchanged:
+through unchanged (see [Aliases](#aliases) to install those as commands):
 
 ```console
 $ what how do i list open ports on linux
@@ -24,6 +24,14 @@ ss -tulnp
 
 It is a shell script around `claude -p` with a system prompt that asks for a
 one line answer. Most answers come back in about two seconds.
+
+- [Install](#install)
+- [Usage](#usage)
+  - [Piped input](#piped-input)
+  - [Tools](#tools)
+- [Aliases](#aliases)
+- [How it works](#how-it-works)
+- [License](#license)
 
 ## Install
 
@@ -35,44 +43,6 @@ cd what
 ./install.sh                 # symlinks into ~/.local/bin, so git pull updates it
 ./install.sh /usr/local/bin  # or pick your own directory
 ```
-
-## Aliases
-
-Since the command name is the first word of the question, other question words
-can be installed as commands too:
-
-```bash
-what --add-alias how,why,when,where
-```
-
-Each one is a symlink next to `what`, pointing at the same script:
-
-```console
-$ how do i list open ports on linux
-ss -tulpn
-
-$ why does git say detached HEAD
-You checked out a commit, tag, or remote branch directly instead of a local branch.
-
-$ when was the first release of rust
-Rust 0.1 was released January 20, 2012; Rust 1.0 came May 15, 2015.
-
-$ where does systemd keep unit files
-/etc/systemd/system (local, wins), /run/systemd/system (runtime), /usr/lib/systemd/system (packages).
-```
-
-A name that is already a command gets skipped. `who` and `which` are real
-programs, and a symlink in front of them would break scripts that call them:
-
-```console
-$ what --add-alias who,which
-what: 'who' is already /usr/bin/who, skipping (--force to shadow it)
-what: 'which' is already /usr/bin/which, skipping (--force to shadow it)
-```
-
-To remove an alias, delete the symlink. `git pull` updates all of them at once.
-Names outside the question words work as well; `explain` gets read as a `what`
-question.
 
 ## Usage
 
@@ -135,6 +105,44 @@ real    0m2.4s
 $ time what does the -t flag default to in the what script here
 real    0m6.7s
 ```
+
+## Aliases
+
+Since the command name is the first word of the question, other question words
+can be installed as commands too:
+
+```bash
+what --add-alias how,why,when,where
+```
+
+Each one is a symlink next to `what`, pointing at the same script:
+
+```console
+$ how do i list open ports on linux
+ss -tulpn
+
+$ why does git say detached HEAD
+You checked out a commit, tag, or remote branch directly instead of a local branch.
+
+$ when was the first release of rust
+Rust 0.1 was released January 20, 2012; Rust 1.0 came May 15, 2015.
+
+$ where does systemd keep unit files
+/etc/systemd/system (local, wins), /run/systemd/system (runtime), /usr/lib/systemd/system (packages).
+```
+
+A name that is already a command gets skipped. `who` and `which` are real
+programs, and a symlink in front of them would break scripts that call them:
+
+```console
+$ what --add-alias who,which
+what: 'who' is already /usr/bin/who, skipping (--force to shadow it)
+what: 'which' is already /usr/bin/which, skipping (--force to shadow it)
+```
+
+To remove an alias, delete the symlink. `git pull` updates all of them at once.
+Names outside the question words work as well; `explain` gets read as a `what`
+question.
 
 ## How it works
 
