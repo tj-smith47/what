@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# One-line answers to quick technical questions, via Claude Code.
+set -euo pipefail
+
+model=${WHAT_MODEL:-claude-sonnet-5}
+effort=${WHAT_EFFORT:-}
+tools=${WHAT_TOOLS:-}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -m|--model)  model=$2; shift 2 ;;
+    -e|--effort) effort=$2; shift 2 ;;
+    -t|--tools)  tools=$2; shift 2 ;;
+    -h|--help)
+      cat <<'USAGE'
+what — ask a quick technical question, get one line back.
+
+  what is the sort flag for selecting the field to sort by
+  what does chmod 4755 mean
+  echo "$err" | what does this mean
+
+  -m, --model   model (env WHAT_MODEL, default claude-sonnet-5)
+  -e, --effort  low|medium|high|xhigh|max (env WHAT_EFFORT, default: model's own)
+  -t, --tools   built-in tools to allow, e.g. WebSearch (env WHAT_TOOLS, default: none)
+USAGE
+      exit 0 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+
+q="$*"
+# The command name is the first word of the sentence: `what is X` -> "what is X".
+[[ $q =~ ^[[:space:]]*(what|how|why|when|where|who|which|whose|whom)([[:space:]]|$) ]] || q="what $q"
+
+# Piped stdin becomes context for the question (`cmd 2>&1 | what does this mean`).
+if [[ ! -t 0 ]]; then
+  q=$(printf '%s\n\nContext (piped to stdin):\n%s' "$q" "$(cat)")
+fi
+
+[[ -n ${q// /} ]] || { echo "what: no question given (try: what --help)" >&2; exit 2; }
+
+exec claude -p \
+  --safe-mode \
+  --no-session-persistence \
+  --tools "$tools" \
+  --model "$model" \
+  ${effort:+--effort "$effort"} \
+  --system-prompt 'You answer quick technical questions asked from a terminal. Rules: answer in ONE line; three at most, and only when the question genuinely needs them. Plain text only, no markdown, no bullets, no code fences, no preamble, no restating the question, no closing caveats or offers of help. Never ask a clarifying question: pick the most likely reading (assume the standard Unix/POSIX tool unless another is named) and answer it. If the answer is a flag or command, show the literal invocation.' \
+  -- "$q"
