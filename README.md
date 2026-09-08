@@ -165,6 +165,18 @@ happen to be in. `--permission-prompts none` means the script cannot stall on a
 permission prompt in a non-interactive run. Session persistence is off, so
 these do not show up in `claude --resume`.
 
+Skipping all of that costs far fewer tokens too. Same question, same
+directory, measured back to back on one machine:
+
+| | Input tokens | Cost |
+| ---- | ------------ | ---- |
+| Plain `claude -p` (that machine's CLAUDE.md, hooks, skills) | ~34,000 | $0.698 |
+| `what` (`--safe-mode`, 3 tools) | 4,068 | $0.017 |
+
+~88% fewer tokens. The plain run also spent a second turn re-reading a repo
+file before answering; `what` answered in one shot. Numbers will vary with the
+size of your own CLAUDE.md stack and which models each side picks.
+
 ## License
 
 MIT
